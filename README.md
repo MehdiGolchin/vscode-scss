@@ -1,3 +1,5 @@
+SCSS Language Server extracted from [vscode-scss](https://github.com/mrmlnc/vscode-scss).
+
 # vscode-scss
 
 > SCSS IntelliSense (Variables, Mixins and Functions) for all files in the workspace.

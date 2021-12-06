@@ -1,30 +1,28 @@
-'use strict';
+"use strict";
 
 import {
 	createConnection,
 	Connection,
-	IPCMessageReader,
-	IPCMessageWriter,
 	TextDocuments,
 	InitializeParams,
 	InitializeResult,
-	TextDocumentSyncKind
-} from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument';
+	TextDocumentSyncKind,
+} from "vscode-languageserver/node";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
-import type { ISettings } from './types/settings';
+import type { ISettings } from "./types/settings";
 
-import ScannerService from './services/scanner';
-import StorageService from './services/storage';
+import ScannerService from "./services/scanner";
+import StorageService from "./services/storage";
 
-import { doCompletion } from './providers/completion';
-import { doHover } from './providers/hover';
-import { doSignatureHelp } from './providers/signatureHelp';
-import { goDefinition } from './providers/goDefinition';
-import { searchWorkspaceSymbol } from './providers/workspaceSymbol';
-import { findFiles } from './utils/fs';
-import { getSCSSRegionsDocument } from './utils/vue';
-import { URI } from 'vscode-uri';
+import { doCompletion } from "./providers/completion";
+import { doHover } from "./providers/hover";
+import { doSignatureHelp } from "./providers/signatureHelp";
+import { goDefinition } from "./providers/goDefinition";
+import { searchWorkspaceSymbol } from "./providers/workspaceSymbol";
+import { findFiles } from "./utils/fs";
+import { getSCSSRegionsDocument } from "./utils/vue";
+import { URI } from "vscode-uri";
 
 interface InitializationOption {
 	workspace: string;
@@ -37,7 +35,7 @@ let storageService: StorageService;
 let scannerService: ScannerService;
 
 // Create a connection for the server
-const connection: Connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+const connection: Connection = createConnection();
 
 console.log = connection.console.log.bind(connection.console);
 console.error = connection.console.error.bind(connection.console);
@@ -62,10 +60,10 @@ connection.onInitialize(
 		storageService = new StorageService();
 		scannerService = new ScannerService(storageService, settings);
 
-		const files = await findFiles('**/*.scss', {
+		const files = await findFiles("**/*.scss", {
 			cwd: workspaceRoot,
 			deep: settings.scannerDepth,
-			ignore: settings.scannerExclude
+			ignore: settings.scannerExclude,
 		});
 
 		try {
@@ -81,27 +79,27 @@ connection.onInitialize(
 				textDocumentSync: TextDocumentSyncKind.Incremental,
 				completionProvider: { resolveProvider: false },
 				signatureHelpProvider: {
-					triggerCharacters: ['(', ',', ';']
+					triggerCharacters: ["(", ",", ";"],
 				},
 				hoverProvider: true,
 				definitionProvider: true,
-				workspaceSymbolProvider: true
-			}
+				workspaceSymbolProvider: true,
+			},
 		};
 	}
 );
 
-connection.onDidChangeConfiguration(params => {
+connection.onDidChangeConfiguration((params) => {
 	settings = params.settings.scss;
 });
 
-connection.onDidChangeWatchedFiles(event => {
+connection.onDidChangeWatchedFiles((event) => {
 	const files = event.changes.map((file) => URI.parse(file.uri).fsPath);
 
 	return scannerService.scan(files);
 });
 
-connection.onCompletion(textDocumentPosition => {
+connection.onCompletion((textDocumentPosition) => {
 	const uri = documents.get(textDocumentPosition.textDocument.uri);
 	if (uri === undefined) {
 		return;
@@ -117,7 +115,7 @@ connection.onCompletion(textDocumentPosition => {
 	return doCompletion(document, offset, settings, storageService);
 });
 
-connection.onHover(textDocumentPosition => {
+connection.onHover((textDocumentPosition) => {
 	const uri = documents.get(textDocumentPosition.textDocument.uri);
 	if (uri === undefined) {
 		return;
@@ -133,7 +131,7 @@ connection.onHover(textDocumentPosition => {
 	return doHover(document, offset, storageService);
 });
 
-connection.onSignatureHelp(textDocumentPosition => {
+connection.onSignatureHelp((textDocumentPosition) => {
 	const uri = documents.get(textDocumentPosition.textDocument.uri);
 	if (uri === undefined) {
 		return;
@@ -149,7 +147,7 @@ connection.onSignatureHelp(textDocumentPosition => {
 	return doSignatureHelp(document, offset, storageService);
 });
 
-connection.onDefinition(textDocumentPosition => {
+connection.onDefinition((textDocumentPosition) => {
 	const uri = documents.get(textDocumentPosition.textDocument.uri);
 	if (uri === undefined) {
 		return;
@@ -165,8 +163,12 @@ connection.onDefinition(textDocumentPosition => {
 	return goDefinition(document, offset, storageService);
 });
 
-connection.onWorkspaceSymbol(workspaceSymbolParams => {
-	return searchWorkspaceSymbol(workspaceSymbolParams.query, storageService, workspaceRoot);
+connection.onWorkspaceSymbol((workspaceSymbolParams) => {
+	return searchWorkspaceSymbol(
+		workspaceSymbolParams.query,
+		storageService,
+		workspaceRoot
+	);
 });
 
 connection.onShutdown(() => {
